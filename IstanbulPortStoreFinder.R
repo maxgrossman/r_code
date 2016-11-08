@@ -2,7 +2,7 @@
 # purpose: take google place api results of stores near istanbul ports and make them shps
 # comments: hardcoded, yea yea yea....
 
-setwd("place/i/have/files")
+setwd("path/to/r_code/data")
 require(jsonlite)
 require(rgdal)
 require(raster)
@@ -13,28 +13,28 @@ porth <- lapply(porth,function(x) fromJSON(x))
 portI <- list.files(".","PortOfIstanbul")
 portI <- lapply(portI,function(x) fromJSON(x))
 
-# make them spatial polygons
+# make them spatial polygons, attributes are name and amentiy type (store type basically)
 porth <- lapply(porth,
-       function(x)
-         SpatialPointsDataFrame(
-           SpatialPoints(
-             cbind(x$results$geometry$location$lng,x$results$geometry$location$lat),
-             CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")),
-           data=data.frame(x$results$name)))
+                function(x)
+                  SpatialPointsDataFrame(
+                    SpatialPoints(
+                      cbind(x$results$geometry$location$lng,x$results$geometry$location$lat),
+                      CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")),
+                    data=data.frame(name=x$results$name,amenity=x$results$types[[1]][1])))
 portI <- lapply(portI,
                 function(x)
                   SpatialPointsDataFrame(
                     SpatialPoints(
                       cbind(x$results$geometry$location$lng,x$results$geometry$location$lat),
                       CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")),
-                    data=data.frame(x$results$name)
-                  ))
+                    data=data.frame(name=x$results$name,amenity=x$results$types[[1]][1])))
 # put them in single lists
 ports_list <- c(portI,porth)
 
 # merge together, write to file
 writeOGR(do.call(bind, ports_list),
-         ".","portprox.shops",driver="ESRI Shapefile")
+         ".","portprox.shops",driver="ESRI Shapefile",
+         overwrite_layer = TRUE)
 
 # make ports spdf
 
@@ -49,5 +49,5 @@ h_port <- SpatialPointsDataFrame(
     CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")),
   data=data.frame(port="Port of Haydarpasa,"))
 
-writeOGR(i_port,".","portIstanbul",driver="ESRI Shapefile")
-writeOGR(h_port,".","portHaydarpasa",driver="ESRI Shapefile")
+writeOGR(i_port,".","portIstanbul",driver="ESRI Shapefile",overwrite_layer = TRUE)
+writeOGR(h_port,".","portHaydarpasa",driver="ESRI Shapefile",overwrite_layer = TRUE)
